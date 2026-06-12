@@ -1,0 +1,5 @@
+{
+	"ignorecase-extensionname": "Case Insensitive Page Titles",
+	"ignorecase-desc": "Redirect or disambiguate titles that case-insensitively match existing ones.",
+	"ignorecase-disambiguation": "No article under the title \"$1\". Did you mean {{PLURAL:$2|the following existing article|one of the following existing articles}}?"
+}

@@ -1,0 +1,33 @@
+{
+	"name": "IgnoreCase",
+	"namemsg": "ignorecase-extensionname",
+	"author": [
+		"AbyxDev"
+	],
+	"descriptionmsg": "ignorecase-desc",
+	"url": "https://www.mediawiki.org/wiki/Extension:IgnoreCase",
+	"license-name": "MIT",
+	"type": "other",
+	"MessagesDirs": {
+		"IgnoreCase": ["i18n"]
+	},
+	"requires": {
+		"MediaWiki": ">= 1.43.0"
+	},
+	"AutoloadClasses": {
+		"IgnoreCase": "IgnoreCase.php"
+	},
+	"HookHandlers": {
+		"IgnoreCaseHooks": {
+			"class": "IgnoreCase",
+			"services": [
+				"DBLoadBalancer"
+			]
+		}
+	},
+	"Hooks": {
+		"BeforeDisplayNoArticleText": "IgnoreCaseHooks",
+		"InitializeArticleMaybeRedirect": "IgnoreCaseHooks"
+	},
+	"manifest_version": 2
+}
