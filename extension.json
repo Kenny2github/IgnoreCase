@@ -27,7 +27,9 @@
 	},
 	"Hooks": {
 		"BeforeDisplayNoArticleText": "IgnoreCaseHooks",
-		"InitializeArticleMaybeRedirect": "IgnoreCaseHooks"
+		"InitializeArticleMaybeRedirect": "IgnoreCaseHooks",
+		"HtmlPageLinkRendererBegin": "IgnoreCaseHooks",
+		"HtmlPageLinkRendererEnd": "IgnoreCaseHooks"
 	},
 	"manifest_version": 2
 }
