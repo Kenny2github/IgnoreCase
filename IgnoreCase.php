@@ -4,6 +4,7 @@ use MediaWiki\Page\Hook\BeforeDisplayNoArticleTextHook;
 use MediaWiki\Hook\InitializeArticleMaybeRedirectHook;
 use MediaWiki\Title\Title;
 use MediaWiki\Linker\LinkTarget;
+use MediaWiki\Context\RequestContext;
 use MediaWiki\Html\Html;
 use Wikimedia\Rdbms\ILoadBalancer;
 
@@ -18,22 +19,33 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		$this->loadBalancer = $loadBalancer;
 	}
 
-	private function getMatchingPages( LinkTarget $target ): array {
+	private function getMatchingPages( LinkTarget $target, bool $suffixes = false ): array {
 		$ns = $target->getNamespace();
 		$key = $target->getDBkey();
 		if ( !isset( self::$memoPages[$ns] ) || !isset( self::$memoPages[$ns][$key] ) ) {
 			$dbr = $this->loadBalancer->getConnection( DB_REPLICA );
+			if ( $suffixes ) {
+				$where = 'convert(page_title using utf8mb4)' . $dbr->buildLike( $key, $dbr->anyString() );
+			} else {
+				$where = [ 'convert(page_title using utf8mb4)' => $key ];
+			}
 			$res = $dbr->newSelectQueryBuilder()
 				->select( [ 'page_title', 'page_id' ] )
 				->from( 'page' )
 				->where( [ 'page_namespace' => $ns ] )
-				->where( [ 'convert(page_title using utf8mb4)' => $key ] )
+				->where( $where )
 				->caller( __METHOD__ )
 				->fetchResultSet();
 
 			$pages = [];
+			$iKey = mb_strtolower( $key );
 			foreach ( $res as $row ) {
-				if ( mb_strtolower( $row->page_title ) === mb_strtolower( $key ) ) {
+				$query = mb_strtolower( $row->page_title );
+				if (
+					$suffixes
+					? str_starts_with( $query, $iKey )
+					: $query === $iKey
+				) {
 					// case-insensitive match
 					$pages[$row->page_id] = $row->page_title;
 				}
@@ -84,6 +96,27 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 			$output->addWikiTextAsInterface( $text );
 		}
 		return true;
+	}
+
+	// NOTE: onSearchGetNearMatch is unnecessary because MW core already
+	// redirects case-insensitively on a committed search. This just adds
+	// autocompletion.
+	public function onApiOpenSearchSuggest( &$results ): void {
+		$search = RequestContext::getMain()->getRequest()->getText( 'search' );
+		$key = Title::newFromText( $search );
+		$pages = $this->getMatchingPages( $key, true );
+		if ( $key === null ) return;
+		foreach ( $pages as $pageid => $page_title ) {
+			$title = Title::makeTitle( $key->getNamespace(), $page_title );
+			$results[$pageid] = [
+				'title' => $title,
+				'redirect from' => null,
+				'extract' => false,
+				'extract trimmed' => false,
+				'image' => false,
+				'url' => $title->getFullURL(),
+			];
+		}
 	}
 
 	public function onHtmlPageLinkRendererBegin(

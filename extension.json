@@ -28,6 +28,7 @@
 	"Hooks": {
 		"BeforeDisplayNoArticleText": "IgnoreCaseHooks",
 		"InitializeArticleMaybeRedirect": "IgnoreCaseHooks",
+		"ApiOpenSearchSuggest": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererBegin": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererEnd": "IgnoreCaseHooks"
 	},
