@@ -43,22 +43,28 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		return self::$memoPages[$ns][$key];
 	}
 
+	private function getOnePage( $title ): ?Title {
+		// if there is more than one option, we are not using it regardless;
+		// if there are no options, there's nothing to use
+		$pages = $this->getMatchingPages( $title );
+		if ( count( $pages ) !== 1 ) return null;
+		// don't use even if light existence checks failed us
+		if ( in_array( $title->getDBKey(), $pages, true) ) return null;
+		// the only matching title is not the one we're viewing; use it
+		foreach ( $pages as $page_id => $page_title ) {
+			return Title::makeTitle( $title->getNamespace(), $page_title );
+		}
+	}
+
 	public function onInitializeArticleMaybeRedirect(
 		$title, $request, &$ignoreRedirect, &$target, &$article
 	): void {
 		// If the article exists at this title, there is no redirecting to be done.
 		// Avoids using Title::isKnown() to avoid an unnecessary DB query.
 		if ( $article->getPage()->exists() ) return;
-		// if there is more than one option, we are not redirecting regardless;
-		// if there are no options, there's nothing to redirect to
-		$pages = $this->getMatchingPages( $title );
-		if ( count( $pages ) !== 1 ) return;
-		// don't redirect even if Page::exists() failed us
-		if ( in_array( $title->getDBKey(), $pages, true) ) return;
-		// the only matching title is not the one we're viewing; redirect to it
-		foreach ( $pages as $page_id => $page_title ) {
-			$target = Title::makeTitle( $title->getNamespace(), $page_title );
-		}
+
+		$result = $this->getOnePage( $title );
+		if ( $result !== null ) $target = $result;
 	}
 
 	public function onBeforeDisplayNoArticleText( $article ): bool {
@@ -97,21 +103,15 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		// If the article exists at this title, there is no relinking to be done.
 		// The result of Title::isKnown() has kindly been provided to us.
 		if ( $isKnown ) return true;
-		// if there is more than one option, we are not relinking regardless;
-		// if there are no options, there's nothing to relink to
-		$pages = $this->getMatchingPages( $target );
-		if ( count( $pages ) !== 1 ) return true;
-		// don't relink even if the redlink check failed us
-		if ( in_array( $target->getDBKey(), $pages, true) ) return true;
-		// the only matching title is not the one we're linking; link to it
+
+		$title = $this->getOnePage( $target );
+		if ( $title === null ) return true;
+
 		$ns = $target->getNamespace();
 		$key = $target->getDBkey();
-		foreach ( $pages as $page_id => $page_title ) {
-			$target = Title::makeTitle( $ns, $page_title );
-		}
 		$extraAttribs = self::$memoAttribs[$ns][$key] ?? [];
 		$query = self::$memoQuery[$ns][$key] ?? [];
-		$ret = $linkRenderer->makeLink( $target, $text, $extraAttribs, $query );
+		$ret = $linkRenderer->makeLink( $title, $text, $extraAttribs, $query );
 		return false;
 	}
 
