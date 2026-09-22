@@ -5,18 +5,22 @@ use MediaWiki\Hook\InitializeArticleMaybeRedirectHook;
 use MediaWiki\Title\Title;
 use MediaWiki\Linker\LinkTarget;
 use MediaWiki\Context\RequestContext;
+use MediaWiki\Config\Config;
+use MediaWiki\Config\ConfigFactory;
 use MediaWiki\Html\Html;
 use Wikimedia\Rdbms\ILoadBalancer;
 
 class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMaybeRedirectHook {
 
 	private ILoadBalancer $loadBalancer;
+	private Config $config;
 	private static $memoPages = [];
 	private static $memoAttribs = [];
 	private static $memoQuery = [];
 
-	public function __construct( ILoadBalancer $loadBalancer ) {
+	public function __construct( ILoadBalancer $loadBalancer, ConfigFactory $configFactory ) {
 		$this->loadBalancer = $loadBalancer;
+		$this->config = $configFactory->makeConfig( 'main' );
 	}
 
 	private function getMatchingPages( LinkTarget $target, bool $suffixes = false ): array {
@@ -102,6 +106,7 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 	// redirects case-insensitively on a committed search. This just adds
 	// autocompletion.
 	public function onApiOpenSearchSuggest( &$results ): void {
+		if ( !$this->config->get( 'IgnoreCaseInSearchSuggestions' ) ) return;
 		$search = RequestContext::getMain()->getRequest()->getText( 'search' );
 		$key = Title::newFromText( $search );
 		$pages = $this->getMatchingPages( $key, true );
@@ -122,6 +127,7 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 	public function onHtmlPageLinkRendererBegin(
 		$linkRenderer, $target, &$text, &$extraAttribs, &$query, &$ret
 	): bool {
+		if ( !$this->config->get( 'IgnoreCaseInLinks' ) ) return true;
 		$ns = $target->getNamespace();
 		$key = $target->getDBkey();
 		// track the last value of these parameters for reuse in on...End()
@@ -136,6 +142,8 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		// If the article exists at this title, there is no relinking to be done.
 		// The result of Title::isKnown() has kindly been provided to us.
 		if ( $isKnown ) return true;
+
+		if ( !$this->config->get( 'IgnoreCaseInLinks' ) ) return true;
 
 		$title = $this->getOnePage( $target );
 		if ( $title === null ) return true;

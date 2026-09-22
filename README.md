@@ -6,6 +6,10 @@ Redirect or disambiguate titles that case-insensitively match existing ones.
 * When more than one case variation exists, or when `?redirect=no` applies, they are listed before the normal missing article text.
 * When no such title exists in any case, the normal missing article text is displayed as usual.
 
+Additionally, by default,
+* When exactly one case variation of a title exists, wikitext links to alternate casings that would otherwise be redlinks will correctly bluelink to that title *without* a true redirect. Turn this off using `$wgIgnoreCaseInLinks = false;` if you wish to avoid the parser performance penalty this incurs (one select from `page` per redlink).
+* The default MediaWiki OpenSearch suggestions are dynamically case insensitive ("main p" will suggest "Main Page"). Turn this off using `$wgIgnoreCaseInSearchSuggestions = false;` if you are using [TitleKey](https://www.mediawiki.org/wiki/Extension:TitleKey) or an alternate search backend, or wish to avoid the performance penalty this incurs (one select from `page` per completion request).
+
 ## Comparison with [SaneCase](https://www.mediawiki.org/wiki/Extension:SaneCase)
 | Property | SaneCase | IgnoreCase |
 | -------- | -------- | ---------- |

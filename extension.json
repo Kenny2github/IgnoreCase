@@ -21,7 +21,8 @@
 		"IgnoreCaseHooks": {
 			"class": "IgnoreCase",
 			"services": [
-				"DBLoadBalancer"
+				"DBLoadBalancer",
+				"ConfigFactory"
 			]
 		}
 	},
@@ -31,6 +32,14 @@
 		"ApiOpenSearchSuggest": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererBegin": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererEnd": "IgnoreCaseHooks"
+	},
+	"config": {
+		"IgnoreCaseInLinks": {
+			"value": true
+		},
+		"IgnoreCaseInSearchSuggestions": {
+			"value": true
+		}
 	},
 	"manifest_version": 2
 }
