@@ -1,8 +1,6 @@
 <?php
 
-use MediaWiki\Page\Hook\BeforeDisplayNoArticleTextHook;
 use MediaWiki\Page\RedirectStore;
-use MediaWiki\Hook\InitializeArticleMaybeRedirectHook;
 use MediaWiki\Title\Title;
 use MediaWiki\Linker\LinkTarget;
 use MediaWiki\Context\RequestContext;
@@ -11,7 +9,18 @@ use MediaWiki\Config\ConfigFactory;
 use MediaWiki\Html\Html;
 use Wikimedia\Rdbms\ILoadBalancer;
 
-class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMaybeRedirectHook {
+class IgnoreCase
+implements
+	\MediaWiki\Page\Hook\BeforeDisplayNoArticleTextHook,
+	\MediaWiki\Hook\InitializeArticleMaybeRedirectHook,
+	\MediaWiki\Storage\Hook\PageSaveCompleteHook,
+	\MediaWiki\Page\Hook\PageUndeleteCompleteHook,
+	\MediaWiki\Page\Hook\ArticlePurgeHook,
+	\MediaWiki\Hook\AfterImportPageHook,
+	\MediaWiki\Api\Hook\ApiOpenSearchSuggestHook,
+	\MediaWiki\Linker\Hook\HtmlPageLinkRendererBeginHook,
+	\MediaWiki\Linker\Hook\HtmlPageLinkRendererEndHook
+{
 
 	private ILoadBalancer $loadBalancer;
 	private Config $config;
@@ -90,7 +99,7 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		if ( $result !== null ) $target = $result;
 	}
 
-	private function updateRedirectTarget( $wikiPage ) {
+	private function updateRedirectTarget( $wikiPage ): void {
 		if ( !$this->config->get( 'IgnoreCaseInLinks' ) ) return;
 		$redir = $this->redirectStore->getRedirectTarget( $wikiPage );
 		// This article is not a redirect
@@ -104,24 +113,24 @@ class IgnoreCase implements BeforeDisplayNoArticleTextHook, InitializeArticleMay
 		$this->redirectStore->updateRedirectTarget( $wikiPage, $redir );
 	}
 	public function onPageSaveComplete(
-		$wikiPage, $user, string $summary, int $flags, $revisionRecord, $editResult
-	) {
+		$wikiPage, $user, $summary, $flags, $revisionRecord, $editResult
+	): bool {
 		$this->updateRedirectTarget( $page );
 		return true;
 	}
 	public function onPageUndeleteComplete(
-		$page, $restorer, string $reason, $restoredRev, $logEntry,
-		int $restoredRevisionCount, bool $created, array $restoredPageIds
-	) {
+		$page, $restorer, $reason, $restoredRev, $logEntry,
+		$restoredRevisionCount, $created, $restoredPageIds
+	): void {
 		$this->updateRedirectTarget( $page );
 	}
-	public function onArticlePurge( &$article ) {
+	public function onArticlePurge( $article ): bool {
 		$this->updateRedirectTarget( $article );
 		return true;
 	}
 	public function onAfterImportPage(
 		$title, $origTitle, $revCount, $sRevCount, $pageInfo
-	) {
+	): void {
 		$this->updateRedirectTarget( $title );
 	}
 
