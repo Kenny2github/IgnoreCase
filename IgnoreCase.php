@@ -16,6 +16,7 @@ implements
 	\MediaWiki\Storage\Hook\PageSaveCompleteHook,
 	\MediaWiki\Page\Hook\PageUndeleteCompleteHook,
 	\MediaWiki\Page\Hook\ArticlePurgeHook,
+	\MediaWiki\Hook\BeforeParserFetchTemplateRevisionRecordHook,
 	\MediaWiki\Hook\AfterImportPageHook,
 	\MediaWiki\Api\Hook\ApiOpenSearchSuggestHook,
 	\MediaWiki\Linker\Hook\HtmlPageLinkRendererBeginHook,
@@ -173,6 +174,23 @@ implements
 				'url' => $title->getFullURL(),
 			];
 		}
+	}
+
+	public function onBeforeParserFetchTemplateRevisionRecord(
+		$contextTitle, $title, &$skip, &$revRecord
+	): void {
+		if ( !this->config->get( 'IgnoreCaseInTemplates' ) ) return;
+		// fragments not supported
+		if ( $title->hasFragment() ) {
+			$skip = true;
+			return;
+		}
+		$result = $this->getOnePage( $title );
+		// not exactly one possibility
+		if ( $result === null ) return;
+		// no redirection needed
+		if ( $result->getDBkey() === $title->getDBkey() ) return;
+		$revRecord = MediaWikiServices::getInstance()->getRevisionLookup()->getRevisionByTitle( $result );
 	}
 
 	public function onHtmlPageLinkRendererBegin(
