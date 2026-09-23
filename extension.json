@@ -22,13 +22,18 @@
 			"class": "IgnoreCase",
 			"services": [
 				"DBLoadBalancer",
-				"ConfigFactory"
+				"ConfigFactory",
+				"RedirectStore"
 			]
 		}
 	},
 	"Hooks": {
 		"BeforeDisplayNoArticleText": "IgnoreCaseHooks",
 		"InitializeArticleMaybeRedirect": "IgnoreCaseHooks",
+		"PageSaveComplete": "IgnoreCaseHooks",
+		"PageUndeleteComplete": "IgnoreCaseHooks",
+		"ArticlePurge": "IgnoreCaseHooks",
+		"AfterImportPage": "IgnoreCaseHooks",
 		"ApiOpenSearchSuggest": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererBegin": "IgnoreCaseHooks",
 		"HtmlPageLinkRendererEnd": "IgnoreCaseHooks"
